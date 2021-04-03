@@ -1,0 +1,35 @@
+\documentclass[12pt]{article}
+
+\usepackage{fullpage}
+\usepackage[normalem]{ulem}
+
+\setlength{\parindent}{0pt}
+
+\title{Code Similarity Detection Tool\\
+Design Documentation}
+\author{Kevin Cao}
+
+\begin{document}
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+With the rising popularity of cryptocurrencies, it has become crucial that crypto-transactions are not only trustworthy, but also efficient and reliable. While Bitcoin continues to control a majority of the crypto-market, alternatives like Ethereum have also been growing in popularity.
+
+\hfill
+
+For some of these alternatives, transactions are controlled and automated using ``smart contracts". These smart contracts are computer programs that explicitly detail the rules and regulations to an agreement between two or more parties. Once the terms of the agreement have been met, the contract will self-execute and complete the transaction as agreed upon.
+
+\subsection{Purpose}
+For many transactions, the corresponding smart contracts are derived from pre-existing popular and mature contracts. By detecting which parent contracts the newer contracts are derived from, the validiation and verification of the contracts can be expedited.
+
+\hfill
+
+As such, a Code Similarity Detection Tool would serve the purpose of assisting in the process of determining the original source of a new contract.
+
+\subsection{Scope}
+
+This Software Design Document details a basic system that serves as a proof of concept for a Code Similarity Detection Tool. For the sake of simplicity, the tool will compare the similarity between code written in a lisp-based language Racket. The system first translates the source code into an Abstract Syntax Tree (AST), and then converts the AST into De Bruijn notation, before running the similarity algorithm. Lisp-based languages are best suited for this type of translation, but other languages can also be similarly converted, although the process is a bit more involved.
+
+\end{document}
