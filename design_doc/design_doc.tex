@@ -2,8 +2,33 @@
 
 \usepackage{fullpage}
 \usepackage[normalem]{ulem}
+\usepackage{mdframed}
+\usepackage{amsmath}
 
 \setlength{\parindent}{0pt}
+\newcommand{\R}{\ensuremath{\mathit{R_{1}}}}
+
+\newcommand{\itm}[1]{\ensuremath{\mathit{#1}}}
+\newcommand{\key}[1]{\texttt{#1}}
+\newcommand{\lp}[0]{\key{(}}
+\newcommand{\rp}[0]{\key{)}}
+\newcommand{\lb}[0]{\key{[}}
+\newcommand{\rb}[0]{\key{]}}
+
+\makeatletter
+\newcommand{\Func}[1]{\lp\key{#1}\checknextarg}
+\newcommand{\checknextarg}{\@ifnextchar\bgroup{\gobblenextarg}{\rp}}
+\newcommand{\gobblenextarg}[1]{~#1\@ifnextchar\bgroup{\gobblenextarg}{\rp}}
+\makeatother
+
+\newcommand{\Atm}[0]{\itm{atom}}
+\newcommand{\Exp}[0]{\itm{exp}}
+\newcommand{\Def}[0]{\itm{def}}
+\newcommand{\var}[0]{\itm{var}}
+\newcommand{\Sub}[2]{\Func{-}{#1}{#2}}
+\newcommand{\Add}[2]{\Func{+}{#1}{#2}}
+\newcommand{\Mul}[2]{\Func{$\boldsymbol{\cdot}$}{#1}{#2}}
+
 
 \title{Code Similarity Detection Tool\\
 Design Documentation}
@@ -22,7 +47,7 @@ With the rising popularity of cryptocurrencies, it has become crucial that crypt
 For some of these alternatives, transactions are controlled and automated using ``smart contracts". These smart contracts are computer programs that explicitly detail the rules and regulations to an agreement between two or more parties. Once the terms of the agreement have been met, the contract will self-execute and complete the transaction as agreed upon.
 
 \subsection{Purpose}
-For many transactions, the corresponding smart contracts are derived from pre-existing popular and mature contracts. By detecting which parent contracts the newer contracts are derived from, the validiation and verification of the contracts can be expedited.
+For many transactions, the corresponding smart contracts are derived from pre-existing popular and mature contracts. By detecting which parent contracts the newer contracts are derived from, the validation and verification process of the contracts can be expedited.
 
 \hfill
 
@@ -30,6 +55,45 @@ As such, a Code Similarity Detection Tool would serve the purpose of assisting i
 
 \subsection{Scope}
 
-This Software Design Document details a basic system that serves as a proof of concept for a Code Similarity Detection Tool. For the sake of simplicity, the tool will compare the similarity between code written in a lisp-based language Racket. The system first translates the source code into an Abstract Syntax Tree (AST), and then converts the AST into De Bruijn notation, before running the similarity algorithm. Lisp-based languages are best suited for this type of translation, but other languages can also be similarly converted, although the process is a bit more involved.
+This Software Design Document details a basic system that serves as a proof of concept for a Code Similarity Detection Tool. For the sake of simplicity, the tool will compare the similarity between code written in a simplified subset of the lisp-based programming language Racket. The system first translates the source code into an Abstract Syntax Tree (AST), and then converts the AST into De Bruijn notation before running the similarity algorithm. Lisp-based languages are best suited for this type of translation, but other languages can also be similarly converted, although the process is a bit more involved.
 
+\section{Conversion of Source Code}
+
+\subsection{Programming Language Scope}
+
+As mentioned in the previous section, the tool will act on a simplified subset of the Racket programming language, which will be referred to as \R{}. As such, it is best that this subset is defined explicitly.
+
+\hfill
+
+The most basic component in \R{} is an \Atm{}. \Atm{} includes the basic primitive data types, such as integers, booleans, symbols, empty lists, and also includes variables.
+
+\hfill
+
+However, most programs in \R{} will not simply be made up of \Atm{}s \textemdash \R{} is largely comprised of \Exp{}s. An \Exp{} can be a simple \Atm{}, an if-statement, a let-statement, or a function application. Figure \ref{fig:f1} shows some examples of \Exp{}s.
+
+\hfill
+
+Of course, in a functional programming language like \R{}, it is imperative that function definitions are explicated. Functional definitions are in a class of their own, \Def{}s. \Def{}s detail function construction by first taking a variable name to describe the function, and then variable parameters, which are used in the \Exp{} body of the \Def{}. \Exp{}s can use these \Def{}s in functional applications, which are categorized under \Exp{}s.
+
+\begin{figure}[h]
+  \begin{mdframed}
+    \[
+    \begin{array}{lcl}
+      \Atm &::=& \itm{int} \mid \itm{bool} \mid \itm{sym} \mid \itm{`\lp\rp} \mid \var \\
+      \Exp &::=& \Atm \mid \Func{if}{\Exp}{\Exp}{\Exp} \mid \lp\key{let}~\lp\lb\var~\Exp\rb\rp~\Exp\rp \\
+           &\mid& \Add{\Exp}{\Exp} \mid \Sub{\Exp}{\Exp} \mid \Mul{\Exp}{\Exp} \mid \Func{-}{\Exp} \\
+           &\mid& \Func{cons}{\Exp}{\Exp} \mid \Func{eq?}{\Exp}{\Exp} \mid \Func{and}{\Exp}{\Exp} \mid \Func{or}{\Exp}{\Exp} \mid \Func{not}{\Exp} \\ 
+           &\mid& \key{...} \\
+    \Def &::=& \lp\key{define}~\lp\var~\var~\key{...}\rp~\Exp\rp \\
+    \R &::=& \Def\key{...}~\Exp
+    \end{array}
+  \]
+  \end{mdframed}
+  \caption{The concrete syntax of \R. ``..." signifies a list of the previous token.}
+  \label{fig:f1}
+\end{figure}
+
+\hfill
+
+Compared to Racket, \R{} is a fairly barebones language\textemdash however, \R{} will be sufficient in demonstrating the core mechanic of the system.
 \end{document}
