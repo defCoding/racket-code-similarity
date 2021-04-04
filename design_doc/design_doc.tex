@@ -5,6 +5,7 @@
 \usepackage{mdframed}
 \usepackage{amsmath}
 \usepackage{float}
+\usepackage{listings}
 
 \setlength{\parindent}{0pt}
 \newcommand{\R}{\ensuremath{\mathit{R_{1}}}}
@@ -16,6 +17,7 @@
 \newcommand{\rp}[0]{\key{)}}
 \newcommand{\lb}[0]{\key{[}}
 \newcommand{\rb}[0]{\key{]}}
+\newcommand{\lamb}[0]{\key{$\lambda$}}
 
 \makeatletter
 \newcommand{\Func}[1]{\lp\key{#1}\checknextarg}
@@ -62,7 +64,11 @@ As such, a Code Similarity Detection Tool would serve the purpose of assisting i
 
 \subsection{Scope}
 
-This Software Design Document details a basic system that serves as a proof of concept for a Code Similarity Detection Tool. For the sake of simplicity, the tool will compare the similarity between code written in a simplified subset of the lisp-based programming language Racket. The system first translates the source code into an Abstract Syntax Tree (AST), and then converts the AST into De Bruijn notation before running the similarity algorithm. Lisp-based languages are best suited for this type of translation, but other languages can also be similarly converted, although the process is a bit more involved.
+This Software Design Document details a basic system that serves as a proof of concept for a Code Similarity Detection Tool. For the sake of simplicity, the tool will compare the similarity between code written in a simplified subset of the lisp-based programming language Racket. The system first translates the source code into an Abstract Syntax Tree (AST), and then converts the AST into a variation of De Bruijn notation before running the similarity algorithm. Lisp-based languages are best suited for this type of translation, but other languages can also be similarly converted, although the process is a bit more involved.
+
+\hfill
+
+Furthermore, it should be clarified that the Code Similarity Detection Tool detailed in this document evaluates syntactical similarity, \emph{not semantic similarity}. The reasoning behind this is detailed later.
 
 \usection{Conversion of Source Code}
 
@@ -72,11 +78,11 @@ As mentioned in the previous section, the tool will act on a simplified subset o
 
 \hfill
 
-The most basic component in \R{} is an \Atm{}. Atoms include the basic primitive data values such as integers, booleans, and symbols. It also includes variables and empty lists.
+The most basic component in \R{} is an \Atm{}. Atoms include the basic primitive data values such as integers, booleans, and symbols. It also includes variables and empty lists. Furthermore, as functions are first-class citizens in \R{}, inbuilt functions can also be considered as atoms.
 
 \hfill
 
-However, most programs in \R{} will not simply be made up of atoms \textemdash \R{} is largely comprised of \Exp{}s, or expressions. An expression can be a simple atoms, an if-statement, a let-statement, or a function application. Figure \ref{fig:f1} shows some examples of expressions.
+However, most programs in \R{} will not simply be made up of atoms \textemdash \R{} is largely comprised of \Exp{}s, or expressions. An expression can be a simple atoms, an if-statement, a let-statement, a function application, or a lambda function. Figure \ref{fig:f1} shows some examples of expressions.
 
 \hfill
 
@@ -90,11 +96,11 @@ Finally, an \R{} program can be described as a list of function definitions foll
   \begin{mdframed}
     \[
     \begin{array}{lcl}
-      \Atm &::=& \itm{int} \mid \itm{bool} \mid \itm{sym} \mid \itm{`\lp\rp} \mid \var \\
+      \Atm &::=& \itm{int} \mid \itm{bool} \mid \itm{sym} \mid \itm{`\lp\rp} \mid \var \mid \key{+} \mid \key{-} \mid \key{$\boldsymbol{\cdot}$} \mid \key{cons} \mid \key{eq?} \mid \key{and} \mid \key{or} \mid \key{not} \mid \key{...} \\
       \Exp &::=& \Atm \mid \Func{if}{\Exp}{\Exp}{\Exp} \mid \lp\key{let}~\lp\lb\var~\Exp\rb\rp~\Exp\rp \\
            &\mid& \Add{\Exp}{\Exp} \mid \Sub{\Exp}{\Exp} \mid \Mul{\Exp}{\Exp} \mid \Func{-}{\Exp} \\
            &\mid& \Func{cons}{\Exp}{\Exp} \mid \Func{eq?}{\Exp}{\Exp} \mid \Func{and}{\Exp}{\Exp} \mid \Func{or}{\Exp}{\Exp} \mid \Func{not}{\Exp} \\ 
-           &\mid& \key{...} \\
+           &\mid& \Func{\lamb}{\var}{...}{\Exp} \mid \key{...} \\
       \Def &::=& \lp\key{define}~\lp\var~\var~\key{...}\rp~\Exp\rp \\
       \R &::=& \Def~\key{...}~\Exp
     \end{array}
@@ -103,8 +109,6 @@ Finally, an \R{} program can be described as a list of function definitions foll
   \caption{The concrete syntax of \R. ``..." signifies a list of the previous token.}
   \label{fig:f1}
 \end{figure}
-
-\hfill
 
 Compared to Racket, \R{} is a fairly barebones language\textemdash however, \R{} will be sufficient in demonstrating the core mechanic of the system.
 
@@ -115,10 +119,11 @@ Before we can begin the similarity algorithm, we first need to convert the sourc
   \begin{mdframed}
     \[
     \begin{array}{lcl}
-      \Atm &::=& \Func{Int}{\itm{int}} \mid \Func{Bool}{\itm{bool}} \mid \Func{Sym}{\itm{sym}} \mid \Func{Var}{\var} \\
-      \Op &::=& \Func{Var}{\var} \mid \key{+} \mid \key{-} \mid \key{$\boldsymbol{\cdot}$} \mid \key{cons} \mid \key{eq?} \mid \key{and} \mid \key{or} \mid \key{not} \mid \key{...} \\
-      \Exp &::=& \Atm \mid \Func{If}{\Exp}{\Exp}{\Exp} \mid \Func{Let}{\Func{Var}{\var}}{\Exp}{\Exp} \mid \Func{Apply}{\Op}{\Exp}{...} \\
-      \Def &::=& \Func{Def}{\var}{\lp\var{}~...\rp}{\Exp} \\
+      \Op &::=& \key{+} \mid \key{-} \mid \key{$\boldsymbol{\cdot}$} \mid \key{cons} \mid \key{eq?} \mid \key{and} \mid \key{or} \mid \key{not} \mid \key{...} \\
+      \Atm &::=& \Func{Int}{\itm{int}} \mid \Func{Bool}{\itm{bool}} \mid \Func{Sym}{\itm{sym}} \mid \Func{Var}{\var} \mid \Func{Op}{\Op} \\
+      \Exp &::=& \Atm \mid \Func{If}{\Exp}{\Exp}{\Exp} \mid \Func{Let}{\Func{Var}{\var}}{\Exp}{\Exp} \mid \Func{Apply}{\Exp}{\Exp}{...} \\
+           &\mid& \Func{Lambda}{\lp\Func{Var}{\var}{}~...\rp}{\Exp} \mid \key{...} \\
+      \Def &::=& \Func{Def}{\Func{Var}{\var}}{\lp\Func{Var}{\var}{}~...\rp}{\Exp} \\
       \R &::=& \Func{Program}{\lp\Def{}~...\rp}{\Exp}
     \end{array}
   \]
@@ -127,9 +132,101 @@ Before we can begin the similarity algorithm, we first need to convert the sourc
   \label{fig:f2}
 \end{figure}
 
-In Figure \ref{fig:f2}, the components of \R{} are converted into objects. You may also notice there is a new classification\textemdash\Op. Here, we have abstracted away functions to be either custom functions created in the program [\Func{Var}{\var}], or inbuilt functions in the language itself [\key{+}, \key{cons}, etc.]. By doing so, we are able to abstract away all function applications to the \Func{Apply}{\Op}{\Exp}{...}\space object.
+In Figure \ref{fig:f2}, the components of \R{} are converted into objects. You may notice a new classification, \Op{}. This simply acts as an abstraction for inbuilt functions in the \R{} language so that we can create the \Func{Op}{\Op}\space object in \Atm.
 
 \hfill
 
 The rest of the Figure \ref{fig:f2} is fairly self-explanatory, so we will not go into further detail here.
+
+\subsection{De Bruijn Notation}
+
+While certain structures of code, such as if-statements or function definitions, must follow a set syntax, variable names are up to the discretion of the developer. In order to properly perform the code similarity algorithm, we must ignore the variable names and normalize the syntax.
+
+\hfill
+
+One method of doing so is to use De Bruijn indices\textemdash variables are instead replaced with numbers that indicate how many variable bindings exist between the variable occurrence and its corresponding binding. To avoid confusion with actual integers, we will rename variables as \texttt{v\#}.
+
+\begin{figure}[H]
+  \begin{mdframed}
+    \begin{lstlisting}[escapechar=\%]
+; Original Syntax
+(%\lamb% (x)
+  (%\lamb% (y)
+    (%\lamb% (z)
+      (+ x (+ y z)))))
+
+; De Bruijnized Syntax
+(%\lamb%
+  (%\lamb% 
+    (%\lamb% 
+      (+ v2 (+ v1 v0)))))
+    \end{lstlisting}
+  \end{mdframed}
+  \caption{Demonstrating conversion to De Bruijn indices.}
+  \label{fig:f3}
+\end{figure}
+
+However, this solution is not perfect\textemdash multi-variable functions would require currying in order to properly be De Bruijnized. Unfortunately, currying functions would make it difficult to perform similarity checks on function applications. In a later section, we will discuss the methodology for comparing two separate functional applications, but in short, we will need to collect all function arguments to properly compare. If functions are curried, then collecting the function arguments will require traversing down the AST and determining which expressions belong to the function application, which is messier than would be preferred (shown in Figure \ref{fig:f4}).
+
+\hfill
+
+\begin{figure}[H]
+  \begin{mdframed}
+    \begin{lstlisting}[escapechar=\%]
+; Original Syntax
+(define (func x y z)
+  (+ x (+ y z)))
+
+; Curried Syntax
+(define (func x)
+  (%\lamb% (y)
+    (%\lamb% (z)
+      (+ x (+ y z)))))
+
+; Curried Function Application 1
+(((func (+ 4 1)) (+ 2 3)) 6)
+
+; Curried Function Application 2
+(((func 6) (+ 4 1)) (+ 2 3))
+
+; AST 1
+(Apply
+  (Apply
+    (Apply
+      (Var func) (Apply (Op +) (Int 4) (Int 1)))
+    (Apply (Op +) (Int 2) (Int 3)))
+  (Int 6))
+
+; AST 2
+(Apply
+  (Apply
+    (Apply
+      (Var func) (Int 6))
+    (Apply (Op +) (Int 4) (Int 1)))
+  (Apply (Op +) (Int 2) (Int 3)))
+    \end{lstlisting}
+  \end{mdframed}
+  \caption{The AST representation of two similar applications of \key{func} hide away the arguments of \key{func}, making it difficult to parse out the arguments for comparison.}
+  \label{fig:f4}
+\end{figure}
+
+It would be best to keep functions as is so that all of the arguments are kept within the same \key{Apply} object at the same level. As such, we use a variation of De Bruijn notation such that for multi-variable functions, variables are considered bound in the order in which they appear in the list of parameters. In essence, we simulate the effect of currying without actually expanding the function and currying it (See Figure \ref{fig:f5}).
+
+\begin{figure}[H]
+  \begin{mdframed}
+    \begin{lstlisting}[escapechar=\%]
+; Original Syntax
+(define (func x y z)
+  (+ x (+ y z)))
+
+; De Bruijn Variation Notation
+(define (func)
+  (+ v2 v1 v0))
+    \end{lstlisting}
+  \end{mdframed}
+  \caption{Example of De Bruijn Variation Notation}
+  \label{fig:f5}
+\end{figure}
+
+Fortunately, as the ultimate purpose of this notation is to check syntactical similarities, the notation's tendency to obscure the semantical meaning of variables is not a weakness we must consider too much.
 \end{document}
