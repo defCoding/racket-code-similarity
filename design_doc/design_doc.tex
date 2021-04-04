@@ -78,7 +78,7 @@ As mentioned in the previous section, the tool will act on a simplified subset o
 
 \hfill
 
-The most basic component in \R{} is an \Atm{}. Atoms include the basic primitive data values such as integers, booleans, and symbols. It also includes variables and empty lists. Furthermore, as functions are first-class citizens in \R{}, inbuilt functions can also be considered as atoms.
+The most basic component in \R{} is an \Atm{}. Atoms include the basic primitive data values such as integers, booleans, and strings. It also includes variables and empty lists. Furthermore, as functions are first-class citizens in \R{}, inbuilt functions can also be considered as atoms.
 
 \hfill
 
@@ -90,19 +90,19 @@ Of course, in a functional programming language like \R{}, it is imperative that
 
 \hfill
 
-Finally, an \R{} program can be described as a list of function definitions followed by an expression statement.
+Finally, an \R{} program can be described as a list of function definitions followed by a list of expression statements.
 
 \begin{figure}[H]
   \begin{mdframed}
     \[
     \begin{array}{lcl}
-      \Atm &::=& \itm{int} \mid \itm{bool} \mid \itm{sym} \mid \itm{`\lp\rp} \mid \var \mid \key{+} \mid \key{-} \mid \key{$\boldsymbol{\cdot}$} \mid \key{cons} \mid \key{eq?} \mid \key{and} \mid \key{or} \mid \key{not} \mid \key{...} \\
+      \Atm &::=& \itm{int} \mid \itm{bool} \mid \itm{str} \mid \itm{empty} \mid \var \mid \key{+} \mid \key{-} \mid \key{$\boldsymbol{\cdot}$} \mid \key{cons} \mid \key{eq?} \mid \key{and} \mid \key{or} \mid \key{not} \mid ... \\
       \Exp &::=& \Atm \mid \Func{if}{\Exp}{\Exp}{\Exp} \mid \lp\key{let}~\lp\lb\var~\Exp\rb\rp~\Exp\rp \\
            &\mid& \Add{\Exp}{\Exp} \mid \Sub{\Exp}{\Exp} \mid \Mul{\Exp}{\Exp} \mid \Func{-}{\Exp} \\
            &\mid& \Func{cons}{\Exp}{\Exp} \mid \Func{eq?}{\Exp}{\Exp} \mid \Func{and}{\Exp}{\Exp} \mid \Func{or}{\Exp}{\Exp} \mid \Func{not}{\Exp} \\ 
-           &\mid& \Func{\lamb}{\var}{...}{\Exp} \mid \key{...} \\
-      \Def &::=& \lp\key{define}~\lp\var~\var~\key{...}\rp~\Exp\rp \\
-      \R &::=& \Def~\key{...}~\Exp
+           &\mid& \Func{\lamb}{\lp\var}{...\rp}{\Exp} \mid ... \\
+      \Def &::=& \lp\key{define}~\lp\var~\var~...\rp~\Exp\rp \\
+      \R &::=& \Def~...~\Exp~...
     \end{array}
   \]
   \end{mdframed}
@@ -119,12 +119,12 @@ Before we can begin the similarity algorithm, we first need to convert the sourc
   \begin{mdframed}
     \[
     \begin{array}{lcl}
-      \Op &::=& \key{+} \mid \key{-} \mid \key{$\boldsymbol{\cdot}$} \mid \key{cons} \mid \key{eq?} \mid \key{and} \mid \key{or} \mid \key{not} \mid \key{...} \\
-      \Atm &::=& \Func{Int}{\itm{int}} \mid \Func{Bool}{\itm{bool}} \mid \Func{Sym}{\itm{sym}} \mid \Func{Var}{\var} \mid \Func{Op}{\Op} \\
+      \Op &::=& \key{+} \mid \key{-} \mid \key{$\boldsymbol{\cdot}$} \mid \key{cons} \mid \key{eq?} \mid \key{and} \mid \key{or} \mid \key{not} \mid ... \\
+      \Atm &::=& \Func{Int}{\itm{int}} \mid \Func{Bool}{\itm{bool}} \mid \Func{Str}{\itm{str}} \mid \Func{Empty} \mid \Func{Var}{\var} \mid \Func{Op}{\Op} \\
       \Exp &::=& \Atm \mid \Func{If}{\Exp}{\Exp}{\Exp} \mid \Func{Let}{\Func{Var}{\var}}{\Exp}{\Exp} \mid \Func{Apply}{\Exp}{\Exp}{...} \\
-           &\mid& \Func{Lambda}{\lp\Func{Var}{\var}{}~...\rp}{\Exp} \mid \key{...} \\
+           &\mid& \Func{Lambda}{\lp\Func{Var}{\var}{}~...\rp}{\Exp} \mid ... \\
       \Def &::=& \Func{Def}{\Func{Var}{\var}}{\lp\Func{Var}{\var}{}~...\rp}{\Exp} \\
-      \R &::=& \Func{Program}{\lp\Def{}~...\rp}{\Exp}
+      \R &::=& \Func{Program}{\lp\Def{}~...\rp}{\lp\Exp{}...\rp}
     \end{array}
   \]
   \end{mdframed}
@@ -228,5 +228,7 @@ It would be best to keep functions as is so that all of the arguments are kept w
   \label{fig:f5}
 \end{figure}
 
-Fortunately, as the ultimate purpose of this notation is to check syntactical similarities, the notation's tendency to obscure the semantical meaning of variables is not a weakness we must consider too much.
+\subsection{Implementation}
+
+
 \end{document}
