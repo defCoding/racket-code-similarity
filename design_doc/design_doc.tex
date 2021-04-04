@@ -9,6 +9,7 @@
 \setlength{\parindent}{0pt}
 \newcommand{\R}{\ensuremath{\mathit{R_{1}}}}
 
+% Creating macros for figures and AST components.
 \newcommand{\itm}[1]{\ensuremath{\mathit{#1}}}
 \newcommand{\key}[1]{\texttt{#1}}
 \newcommand{\lp}[0]{\key{(}}
@@ -31,6 +32,9 @@
 \newcommand{\Add}[2]{\Func{+}{#1}{#2}}
 \newcommand{\Mul}[2]{\Func{$\boldsymbol{\cdot}$}{#1}{#2}}
 
+% Redesigning Sections
+\newcommand{\usection}[1]{\section{#1}\hrule\hfill}
+
 
 \title{Code Similarity Detection Tool\\
 Design Documentation}
@@ -41,7 +45,8 @@ Design Documentation}
 
 \tableofcontents
 
-\section{Introduction}
+\usection{Introduction}
+
 With the rising popularity of cryptocurrencies, it has become crucial that crypto-transactions are not only trustworthy, but also efficient and reliable. While Bitcoin continues to control a majority of the crypto-market, alternatives like Ethereum have also been growing in popularity.
 
 \hfill
@@ -59,7 +64,7 @@ As such, a Code Similarity Detection Tool would serve the purpose of assisting i
 
 This Software Design Document details a basic system that serves as a proof of concept for a Code Similarity Detection Tool. For the sake of simplicity, the tool will compare the similarity between code written in a simplified subset of the lisp-based programming language Racket. The system first translates the source code into an Abstract Syntax Tree (AST), and then converts the AST into De Bruijn notation before running the similarity algorithm. Lisp-based languages are best suited for this type of translation, but other languages can also be similarly converted, although the process is a bit more involved.
 
-\section{Conversion of Source Code}
+\usection{Conversion of Source Code}
 
 \subsection{Programming Language Scope}
 
