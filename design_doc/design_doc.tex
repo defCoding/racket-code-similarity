@@ -4,6 +4,7 @@
 \usepackage[normalem]{ulem}
 \usepackage{mdframed}
 \usepackage{amsmath}
+\usepackage{float}
 
 \setlength{\parindent}{0pt}
 \newcommand{\R}{\ensuremath{\mathit{R_{1}}}}
@@ -24,6 +25,7 @@
 \newcommand{\Atm}[0]{\itm{atom}}
 \newcommand{\Exp}[0]{\itm{exp}}
 \newcommand{\Def}[0]{\itm{def}}
+\newcommand{\Op}[0]{\itm{op}}
 \newcommand{\var}[0]{\itm{var}}
 \newcommand{\Sub}[2]{\Func{-}{#1}{#2}}
 \newcommand{\Add}[2]{\Func{+}{#1}{#2}}
@@ -65,17 +67,21 @@ As mentioned in the previous section, the tool will act on a simplified subset o
 
 \hfill
 
-The most basic component in \R{} is an \Atm{}. \Atm{} includes the basic primitive data types, such as integers, booleans, symbols, empty lists, and also includes variables.
+The most basic component in \R{} is an \Atm{}. Atoms include the basic primitive data values such as integers, booleans, and symbols. It also includes variables and empty lists.
 
 \hfill
 
-However, most programs in \R{} will not simply be made up of \Atm{}s \textemdash \R{} is largely comprised of \Exp{}s. An \Exp{} can be a simple \Atm{}, an if-statement, a let-statement, or a function application. Figure \ref{fig:f1} shows some examples of \Exp{}s.
+However, most programs in \R{} will not simply be made up of atoms \textemdash \R{} is largely comprised of \Exp{}s, or expressions. An expression can be a simple atoms, an if-statement, a let-statement, or a function application. Figure \ref{fig:f1} shows some examples of expressions.
 
 \hfill
 
-Of course, in a functional programming language like \R{}, it is imperative that function definitions are explicated. Functional definitions are in a class of their own, \Def{}s. \Def{}s detail function construction by first taking a variable name to describe the function, and then variable parameters, which are used in the \Exp{} body of the \Def{}. \Exp{}s can use these \Def{}s in functional applications, which are categorized under \Exp{}s.
+Of course, in a functional programming language like \R{}, it is imperative that function definitions are explicated. Functional definitions are in a class of their own, \Def{}s. Definitions detail function construction by first taking a variable name to describe the function, and then variable parameters, which are used in the expression body of the definition. Expressions can use the function name from the definition in functional applications, which are categorized under expressions.
 
-\begin{figure}[h]
+\hfill
+
+Finally, an \R{} program can be described as a list of function definitions followed by an expression statement.
+
+\begin{figure}[H]
   \begin{mdframed}
     \[
     \begin{array}{lcl}
@@ -84,8 +90,8 @@ Of course, in a functional programming language like \R{}, it is imperative that
            &\mid& \Add{\Exp}{\Exp} \mid \Sub{\Exp}{\Exp} \mid \Mul{\Exp}{\Exp} \mid \Func{-}{\Exp} \\
            &\mid& \Func{cons}{\Exp}{\Exp} \mid \Func{eq?}{\Exp}{\Exp} \mid \Func{and}{\Exp}{\Exp} \mid \Func{or}{\Exp}{\Exp} \mid \Func{not}{\Exp} \\ 
            &\mid& \key{...} \\
-    \Def &::=& \lp\key{define}~\lp\var~\var~\key{...}\rp~\Exp\rp \\
-    \R &::=& \Def\key{...}~\Exp
+      \Def &::=& \lp\key{define}~\lp\var~\var~\key{...}\rp~\Exp\rp \\
+      \R &::=& \Def~\key{...}~\Exp
     \end{array}
   \]
   \end{mdframed}
@@ -96,4 +102,29 @@ Of course, in a functional programming language like \R{}, it is imperative that
 \hfill
 
 Compared to Racket, \R{} is a fairly barebones language\textemdash however, \R{} will be sufficient in demonstrating the core mechanic of the system.
+
+\subsection{Abstract Syntax Trees}
+Before we can begin the similarity algorithm, we first need to convert the source code into an Abstract Syntax Tree, which abstracts away the source code into the node objects of the tree. In short, we convert the concrete syntax detailed in Figure \ref{fig:f1} into the abstract syntax detailed in Figure \ref{fig:f2}.
+
+\begin{figure}[H]
+  \begin{mdframed}
+    \[
+    \begin{array}{lcl}
+      \Atm &::=& \Func{Int}{\itm{int}} \mid \Func{Bool}{\itm{bool}} \mid \Func{Sym}{\itm{sym}} \mid \Func{Var}{\var} \\
+      \Op &::=& \Func{Var}{\var} \mid \key{+} \mid \key{-} \mid \key{$\boldsymbol{\cdot}$} \mid \key{cons} \mid \key{eq?} \mid \key{and} \mid \key{or} \mid \key{not} \mid \key{...} \\
+      \Exp &::=& \Atm \mid \Func{If}{\Exp}{\Exp}{\Exp} \mid \Func{Let}{\Func{Var}{\var}}{\Exp}{\Exp} \mid \Func{Apply}{\Op}{\Exp}{...} \\
+      \Def &::=& \Func{Def}{\var}{\lp\var{}~...\rp}{\Exp} \\
+      \R &::=& \Func{Program}{\lp\Def{}~...\rp}{\Exp}
+    \end{array}
+  \]
+  \end{mdframed}
+  \caption{The abstract syntax of \R.}
+  \label{fig:f2}
+\end{figure}
+
+In Figure \ref{fig:f2}, the components of \R{} are converted into objects. You may also notice there is a new classification\textemdash\Op. Here, we have abstracted away functions to be either custom functions created in the program [\Func{Var}{\var}], or inbuilt functions in the language itself [\key{+}, \key{cons}, etc.]. By doing so, we are able to abstract away all function applications to the \Func{Apply}{\Op}{\Exp}{...}\space object.
+
+\hfill
+
+The rest of the Figure \ref{fig:f2} is fairly self-explanatory, so we will not go into further detail here.
 \end{document}
