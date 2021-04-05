@@ -15,7 +15,7 @@
     [(Var v)
      (define idx (index-of env v))
      (if idx
-         (Var (format "v~a" idx))
+         (Var (string->symbol (format "v~a" idx)))
          ast)]
     [(If con consq alter)
      (define con-d (debruijnize con env))
@@ -23,7 +23,7 @@
      (define alter-d (debruijnize alter env))
      (If con-d consq-d alter-d)]
     [(Let var val body)
-     (define val-d (debruijnize val))
+     (define val-d (debruijnize val env))
      (define new-env (cons (Var-v var) env))
      (define body-d (debruijnize body new-env))
      (Let var val-d body-d)]
@@ -35,7 +35,7 @@
      (Lambda p-ls body-d)]
     [(Apply fn args)
      (define fn-d (debruijnize fn env))
-     (define args-d (map debruijnize args))
+     (define args-d (map (λ (ast) (debruijnize ast env)) args))
      (Apply fn-d args-d)]
     [(Def fn-name p-ls body)
      (define new-env (append
@@ -44,6 +44,6 @@
      (define body-d (debruijnize body new-env))
      (Def fn-name p-ls body-d)]
     [(Program defs exps)
-     (define defs-d (map debruijnize defs))
-     (define exps-d (map debruijnize exps))
+     (define defs-d (map (λ (ast) (debruijnize ast env)) defs))
+     (define exps-d (map (λ (ast) (debruijnize ast env)) exps))
      (Program defs-d exps-d)]))

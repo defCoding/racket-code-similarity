@@ -9,6 +9,7 @@
 
 \setlength{\parindent}{0pt}
 \newcommand{\R}{\ensuremath{\mathit{R_{1}}}}
+\newcommand{\tab}{\hspace{6mm}}
 
 % Creating macros for figures and AST components.
 \newcommand{\itm}[1]{\ensuremath{\mathit{#1}}}
@@ -82,7 +83,7 @@ The most basic component in \R{} is an \Atm{}. Atoms include the basic primitive
 
 \hfill
 
-However, most programs in \R{} will not simply be made up of atoms \textemdash \R{} is largely comprised of \Exp{}s, or expressions. An expression can be a simple atoms, an if-statement, a let-statement, a function application, or a lambda function. Figure \ref{fig:f1} shows some examples of expressions.
+However, most programs in \R{} will not simply be made up of atoms \textemdash \R{} is largely comprised of \Exp{}s, or expressions. An expression can be a simple atoms, an if-statement, a let-statement, a function application, or a lambda function. Figure \ref{concrete-syntax} shows some examples of expressions.
 
 \hfill
 
@@ -107,13 +108,13 @@ Finally, an \R{} program can be described as a list of function definitions foll
   \]
   \end{mdframed}
   \caption{The concrete syntax of \R. ``..." signifies a list of the previous token.}
-  \label{fig:f1}
+  \label{concrete-syntax}
 \end{figure}
 
 Compared to Racket, \R{} is a fairly barebones language\textemdash however, \R{} will be sufficient in demonstrating the core mechanic of the system.
 
 \subsection{Abstract Syntax Trees}
-Before we can begin the similarity algorithm, we first need to convert the source code into an Abstract Syntax Tree, which abstracts away the source code into the node objects of the tree. In short, we convert the concrete syntax detailed in Figure \ref{fig:f1} into the abstract syntax detailed in Figure \ref{fig:f2}.
+Before we can begin the similarity algorithm, we first need to convert the source code into an Abstract Syntax Tree, which abstracts away the source code into the node objects of the tree. In short, we convert the concrete syntax detailed in Figure \ref{concrete-syntax} into the abstract syntax detailed in Figure \ref{abstract-syntax}.
 
 \begin{figure}[H]
   \begin{mdframed}
@@ -129,18 +130,18 @@ Before we can begin the similarity algorithm, we first need to convert the sourc
   \]
   \end{mdframed}
   \caption{The abstract syntax of \R.}
-  \label{fig:f2}
+  \label{abstract-syntax}
 \end{figure}
 
-In Figure \ref{fig:f2}, the components of \R{} are converted into objects. You may notice a new classification, \Op{}. This simply acts as an abstraction for inbuilt functions in the \R{} language so that we can create the \Func{Op}{\Op}\space object in \Atm.
+In Figure \ref{abstract-syntax}, the components of \R{} are converted into objects. You may notice a new classification, \Op{}. This simply acts as an abstraction for inbuilt functions in the \R{} language so that we can create the \Func{Op}{\Op}\space object in \Atm.
 
 \hfill
 
-The rest of the Figure \ref{fig:f2} is fairly self-explanatory, so we will not go into further detail here.
+The rest of the Figure \ref{abstract-syntax} is fairly self-explanatory, so we will not go into further detail here.
 
 \subsection{De Bruijn Notation}
 
-While certain structures of code, such as if-statements or function definitions, must follow a set syntax, variable names are up to the discretion of the developer. In order to properly perform the code similarity algorithm, we must ignore the variable names and normalize the syntax.
+While certain structures of code, such as if-statements or function definitions, must follow a set syntax, variable names are up to the discretion of the developer. In order to properly perform the code similarity algorithm, we must ignore the variable names and standardize the syntax.
 
 \hfill
 
@@ -163,10 +164,10 @@ One method of doing so is to use De Bruijn indices\textemdash variables are inst
     \end{lstlisting}
   \end{mdframed}
   \caption{Demonstrating conversion to De Bruijn indices.}
-  \label{fig:f3}
+  \label{debruijn}
 \end{figure}
 
-However, this solution is not perfect\textemdash multi-variable functions would require currying in order to properly be De Bruijnized. Unfortunately, currying functions would make it difficult to perform similarity checks on function applications. In a later section, we will discuss the methodology for comparing two separate functional applications, but in short, we will need to collect all function arguments to properly compare. If functions are curried, then collecting the function arguments will require traversing down the AST and determining which expressions belong to the function application, which is messier than would be preferred (shown in Figure \ref{fig:f4}).
+However, this solution is not perfect\textemdash multi-variable functions would require currying in order to properly be De Bruijnized. Unfortunately, currying functions would make it difficult to perform similarity checks on function applications. In a later section, we will discuss the methodology for comparing two separate functional applications, but in short, we will need to collect all function arguments to properly compare. If functions are curried, then collecting the function arguments will require traversing down the AST and determining which expressions belong to the function application, which is messier than would be preferred (shown in Figure \ref{curried-ast}).
 
 \hfill
 
@@ -207,10 +208,10 @@ However, this solution is not perfect\textemdash multi-variable functions would 
     \end{lstlisting}
   \end{mdframed}
   \caption{The AST representation of two similar applications of \key{func} hide away the arguments of \key{func}, making it difficult to parse out the arguments for comparison.}
-  \label{fig:f4}
+  \label{curried-ast}
 \end{figure}
 
-It would be best to keep functions as is so that all of the arguments are kept within the same \key{Apply} object at the same level. As such, we use a variation of De Bruijn notation such that for multi-variable functions, variables are considered bound in the order in which they appear in the list of parameters. In essence, we simulate the effect of currying without actually expanding the function and currying it (See Figure \ref{fig:f5}).
+It would be best to keep functions as is so that all of the arguments are kept within the same \key{Apply} object at the same level. As such, we use a variation of De Bruijn notation such that for multi-variable functions, variables are considered bound in the order in which they appear in the list of parameters. In essence, we simulate the effect of currying without actually expanding the function and currying it (See Figure \ref{debruijn-variation}).
 
 \begin{figure}[H]
   \begin{mdframed}
@@ -225,7 +226,7 @@ It would be best to keep functions as is so that all of the arguments are kept w
     \end{lstlisting}
   \end{mdframed}
   \caption{Example of De Bruijn Variation Notation}
-  \label{fig:f5}
+  \label{debruijn-variation}
 \end{figure}
 
 \subsection{Implementation}
@@ -234,11 +235,57 @@ Fortunately, the Racket programming language does make parsing \R{} rather simpl
 
 \hfill
 
-To facilitate in the process of converting the concrete syntax of the \R{} language into an AST, we can take advantage of Racket \key{structs}, lending to a somewhat OOP-style implementation. As each expression is parsed, we generate the corresponding \key{struct}, and recurse on its components.
+To facilitate in the process of converting the concrete syntax of the \R{} language into an AST, we can take advantage of Racket \key{structs}, lending to a somewhat OOP-style implementation (See Table \ref{ast-structs}). As each expression is parsed, we generate the corresponding \key{struct}, and recurse on its components.
+
+\begin{table}[H]
+  \centering
+  \begin{mdframed}
+    \begin{tabular}{ll}
+      \key{If} & \key{Int} \\
+      \tab con : condition & \tab n : integer value \\
+      \tab consq : consequent & \key{Bool} \\
+      \tab alter : alternative & \tab b : boolean value \\
+      \key{Let} & \key{Str} \\
+      \tab v : variable name & \tab s : string \\
+      \tab val : value to bind & \key{Op} \\
+      \tab body : main body of let & \tab o : operation \\
+      \key{Lambda} & \key{Var} \\
+      \tab p-ls : list of parameters & \tab v : variable name \\
+      \tab body : main body of lambda & \key{Empty} \\
+      \key{Def} \\
+      \tab fn-name : function name \\
+      \tab p-ls : list of parameters \\
+      \tab body : main body of function \\
+      \key{Program} \\
+      \tab def-ls : list of definitions \\
+      \tab exp-ls : list of expressions
+    \end{tabular}
+  \end{mdframed}
+  \caption{\key{struct} Representations of AST Nodes}
+  \label{ast-structs}
+\end{table}
+
+After repeatedly calling the \key{read} function on the input file and parsing it, we are left with a list of various expression/definition AST nodes. With a quick partition of the list, we can then construct the \key{Program} struct with the disjoint list of definitions and expressions.
+
+\subsubsection{De Bruijn Conversion}
+Once we have finished the conversion from concrete syntax to an AST, converting to De Bruijn notation is quite simple, especially since we are not evaluating the program's behavior, only changing the syntax form.
 
 \hfill
 
-After repeatedly calling the \key{read} function on the input file and parsing it, we are left with a list of various expression/definition AST nodes. After a quick partition of the list, we can then construct the \key{Program} struct with the disjoint list of definitions and expressions.
+To calculate the number of bindings between a variable's occurrence and its initial binding, we maintain an environment of variables as we evaluate an expression. For this use case, the environment is quite simple\textemdash it is simply a list of variables, and each time we encounter a variable binding, we add the variable to the front of the list. When we see an occurrence of a variable, we look for its index in the environment, and that will be the \key{\#} in our \key{v\#}.
 
-\subsubsection{De Bruijn Notation}
+\hfill
+
+If the variable does not exist in the environment, we assume that the variable is a function that has already been defined in the source code, and leave it as is. As we are simply checking the syntax of the source code and are not checking for errors, we assume that there are no occurrences of free (unbound) variables.
+
+\hfill
+
+There was some consideration made toward the neccessity of standardizing function names as well, perhaps relabeling functions in the form \key{f\#}, so that there could be a differentiation made between functions and variables. However, it was ultimately decided that doing so would not have a large effect on the similarity algorithm.
+
+\section{The Similarity Algorithm}
+
+Up until this point, the program has been implemented in the Racket programming language. The algorithm is best implemented in an object oriented programming language, so at this point, we make a transition from Racket to Python.
+
+\subsection{Comparing ASTs}
+
 \end{document}
