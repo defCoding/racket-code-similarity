@@ -6,10 +6,12 @@
 \usepackage{amsmath}
 \usepackage{float}
 \usepackage{listings}
+\usepackage{changepage}
 
 \setlength{\parindent}{0pt}
 \newcommand{\R}{\ensuremath{\mathit{R_{1}}}}
 \newcommand{\tab}{\hspace{6mm}}
+\renewcommand\labelitemi{$\boldsymbol{\cdot}$}
 
 % Creating macros for figures and AST components.
 \newcommand{\itm}[1]{\ensuremath{\mathit{#1}}}
@@ -238,7 +240,6 @@ Fortunately, the Racket programming language does make parsing \R{} rather simpl
 To facilitate in the process of converting the concrete syntax of the \R{} language into an AST, we can take advantage of Racket \key{structs}, lending to a somewhat OOP-style implementation (See Table \ref{ast-structs}). As each expression is parsed, we generate the corresponding \key{struct}, and recurse on its components.
 
 \begin{table}[H]
-  \centering
   \begin{mdframed}
     \begin{tabular}{ll}
       \key{If} & \key{Int} \\
@@ -286,6 +287,71 @@ There was some consideration made toward the neccessity of standardizing functio
 
 Up until this point, the program has been implemented in the Racket programming language. The algorithm is best implemented in an object oriented programming language, so at this point, we make a transition from Racket to Python.
 
-\subsection{Comparing ASTs}
+\subsection{Comparing AST Expressions}
 
+Comparing AST expressions can be done by comparing similar structures together and recursively comparing their components. We can use a point-based system to represent similarity\textemdash for every similar feature, we add a point. The total number of points would be their \textbf{similarity score}.
+
+\hfill
+
+For \Atm{} nodes, if two atomic nodes are of the same structure, that adds 1 point of similarity. If they share the same structure and the same value, add another point of similarity. For \key{Empty} nodes, two \key{Empty} nodes will automatically have 2 points of similarity as they have no value to compare.
+
+\hfill
+
+Comparing two expression nodes of the same structure is a bit more involved as the subcomponents will need to be recursed on. Before discussing the comparison methods for expression nodes, we need to explain what is called the \textbf{similarity cap}. The similarity cap is a value used to determine the relative similarity of two programs\textemdash otherwise, larger programs will naturally have a higher similarity score as they will have more AST nodes to process. To calculate the similarity cap of a program, count the number of AST nodes in the tree, counting \Atm{} structures twice as they can have a max similarity score of 2.
+
+\hfill
+
+\begin{itemize}
+  \item\key{If}
+    \begin{adjustwidth}{5mm}{}
+      Compare the two condition expressions and take the similarity score as the first score.
+
+      To compare the consequents and alternatives, calculate the combined similarity score of comparing consequent to consequent and alternative to alternative. Then calculate the combined similarity score of comparing consequents to alternatives. Choose the larger of the two scores as the second similarity score.
+
+      The sum of the two similarity scores will be the similarity score of the two \key{If} structures.
+    \end{adjustwidth}
+
+  \item\key{Let}
+    \begin{adjustwidth}{5mm}{}
+      The sum of the similarity scores from comparing the value expressions and comparing the body expressions will be the similarity score.
+
+      As all variables have De Bruijnized, there is no need to consider the new variable created in the \key{Let}.
+    \end{adjustwidth}
+
+  \item\key{Apply}
+    \begin{adjustwidth}{5mm}{}
+      Calculate the similarity score from comparing the applied functions.
+
+      To calculate the similarity score of the arguments, we will want to pair up each argument with the most similar argument from the other structure. Call the list of arguments from the first \key{Apply} structure \key{args1} and the second list of arguments from the other structure \key{args2}.
+
+      Take the first argument from \key{args1}. Compare it to each argument from \key{args2} and pick the argument that has the highest similarity score. Remove that argument from \key{args2}.
+
+      Take the next argument from \key{args1} and repeat the previous step again.
+
+      Do so until all pairings have been made. Sum up the similarity scores from the resulting pairs and the similarity score of the applied functions to achieve a tentative similarity score.
+
+      If there are excess unpaired arguments, sum up the similarity caps of the excess arguments and subtract that from the tentative score above (with a minimum total score value of 0). The resulting value is the similarity score of the \key{Apply} structures.
+    \end{adjustwidth}
+
+  \item\key{Lambda}
+    \begin{adjustwidth}{5mm}{}
+      Calculate the similarity score of the bodies of the lambda expressions and subtract from that the difference in function arity to determine the overall similarity score.
+    \end{adjustwidth}
+
+  \item\key{Def}
+    \begin{adjustwidth}{5mm}{}
+      This is the same as \key{Lambda}\textemdash calculate the similarity score of the bodies of the definitions and subtract from that the difference in function arity.
+    \end{adjustwidth}
+
+  \item\key{Program}
+    \begin{adjustwidth}{5mm}{}
+      First, pair up function definitions in the same way as described for arguments in \key{Apply}. Sum up the similarity scores from the resulting pairs.
+
+      Do the same for the list of expressions in both \key{Program} structures. Sum up the similarity scores from the resulting pairs.
+
+      Sum up both similarities scores from the definitions and expressions to calculate the similarity score of the two \key{Program}s.
+    \end{adjustwidth}
+  \end{itemize}
+
+  To calculate the relative similarity between two source files, calculate the similarity cap of the two files separately. Divide the similarity score by the smaller of the two similarity caps to calculate the relative similarity.
 \end{document}
