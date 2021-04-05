@@ -229,6 +229,16 @@ It would be best to keep functions as is so that all of the arguments are kept w
 \end{figure}
 
 \subsection{Implementation}
+\subsubsection{AST Conversion}
+Fortunately, the Racket programming language does make parsing \R{} rather simple as its \key{read} function will read individual expressions from the file. Racket's \key{match} function allows for recursive pattern matching, so a parser function can be applied recursively on the sub-expressions within expressions.
 
+\hfill
 
+To facilitate in the process of converting the concrete syntax of the \R{} language into an AST, we can take advantage of Racket \key{structs}, lending to a somewhat OOP-style implementation. As each expression is parsed, we generate the corresponding \key{struct}, and recurse on its components.
+
+\hfill
+
+After repeatedly calling the \key{read} function on the input file and parsing it, we are left with a list of various expression/definition AST nodes. After a quick partition of the list, we can then construct the \key{Program} struct with the disjoint list of definitions and expressions.
+
+\subsubsection{De Bruijn Notation}
 \end{document}
