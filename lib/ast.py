@@ -18,7 +18,7 @@ class AST(ABC):
         - other (AST) : the other ast to compare to
 
         Returns:
-        - (number) : the similarity score
+        - (int) : the similarity score
         """
         pass
 
@@ -27,7 +27,7 @@ class AST(ABC):
         Returns the similarity cap of this node.
 
         Returns:
-        - (number) : the similarity cap
+        - (int) : the similarity cap
         """
         if self._sim_cap == -1:
             self._sim_cap = 1 + sum([c.similarity_cap() for c in self.components])
@@ -42,7 +42,7 @@ class AST(ABC):
         - other (AST) : the other ast to compare to
 
         Returns:
-        - (Tuple of (number, number)) : the similarity score and relative similarity
+        - (Tuple of (int, float)) : the similarity score and relative similarity
         """
         similarity_score = self.compare(other)
         relative_similarity = similarity_score / min(self.similarity_cap(), other.similarity_cap())
@@ -291,7 +291,7 @@ def pair_up_similar_asts(ls1, ls2):
     - ls2 (List of AST) : The other list of ASTs.
 
     Returns:
-    - (Tuple of ((Dict of (Tuple of (AST, AST)) : (number)), (List of AST))) : 
+    - (Tuple of ((Dict of (Tuple of (AST, AST)) : (int)), (List of AST))) : 
         Returns a tuple with two items, a dictionary and a list.
         The dictionary maps tuple pairings of ASTs to their similarity score.
         The list contains all extra ASTs that were not able to be matched.
