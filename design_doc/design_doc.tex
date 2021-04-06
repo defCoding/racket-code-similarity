@@ -16,7 +16,9 @@
     linkcolor=black,
     urlcolor=black
 }
-
+\usepackage[format=plain,
+            font=it]{caption}
+            
 \usepackage{graphicx}
 \graphicspath{ {.} }
 
@@ -73,7 +75,7 @@ With the rising popularity of cryptocurrencies, it has become crucial that crypt
 For some of these alternatives, transactions are controlled and automated using ``smart contracts". These smart contracts are computer programs that explicitly detail the rules and regulations to an agreement between two or more parties. Once the terms of the agreement have been met, the contract will self-execute and complete the transaction as agreed upon.
 
 \subsection{Purpose}
-For many transactions, the corresponding smart contracts are derived from pre-existing popular and mature contracts. By detecting which parent contracts the newer contracts are derived from, the verification process of the contracts can be expedited.
+For many transactions, the corresponding smart contracts are derived from pre-existing popular and mature contracts. By detecting the parent contracts that newer contracts are derived from, the verification process of the contracts can be expedited.
 
 \hfill
 
@@ -87,6 +89,8 @@ This Software Design Document details a basic system that serves as a proof of c
 
 Furthermore, it should be clarified that the Code Similarity Detection Tool detailed in this document evaluates syntactical similarity, \emph{not semantical similarity}. The reasoning behind this is detailed later.
 
+\newpage 
+
 \usection{Conversion of Source Code}
 
 \subsection{Programming Language Scope}
@@ -95,7 +99,7 @@ As mentioned in the previous section, the tool will act on a simplified subset o
 
 \hfill
 
-The most basic component in \R{} is an \Atm{}. Atoms include the basic primitive data values such as integers, booleans, and strings. It also includes variables and empty lists. Furthermore, as functions are first-class citizens in \R{}, inbuilt functions can also be considered as atoms.
+The most basic component in \R{} is an \Atm{}. Atoms include the basic primitive data values such as integers, booleans, and strings. It also includes variables and empty lists. Furthermore, as functions are first-class citizens in \R{}, built-in functions can also be considered as atoms.
 
 \hfill
 
@@ -127,7 +131,7 @@ Finally, an \R{} program can be described as a list of function definitions foll
   \label{concrete-syntax}
 \end{figure}
 
-Compared to Racket, \R{} is a fairly barebones language\textemdash however, \R{} will be sufficient in demonstrating the core mechanic of the system.
+Compared to Racket, \R{} is a fairly bare-bones language\textemdash however, \R{} will be sufficient in demonstrating the core mechanic of the system.
 
 \subsection{Abstract Syntax Trees}
 Before we can begin the similarity algorithm, we first need to convert the source code into an Abstract Syntax Tree, which abstracts away the source code into the node objects of the tree. In short, we convert the concrete syntax detailed in Figure \ref{concrete-syntax} into the abstract syntax detailed in Figure \ref{abstract-syntax}.
@@ -149,11 +153,11 @@ Before we can begin the similarity algorithm, we first need to convert the sourc
   \label{abstract-syntax}
 \end{figure}
 
-In Figure \ref{abstract-syntax}, the components of \R{} are converted into objects. You may notice a new classification, \Op{}. This simply acts as an abstraction for inbuilt functions in the \R{} language so that we can create the \Func{Op}{\Op}\space object in \Atm.
+In Figure \ref{abstract-syntax}, the components of \R{} are converted into objects. You may notice a new classification, \Op{}. This simply acts as an abstraction for built-in functions in the \R{} language so that we can create the \Func{Op}{\Op}\space object in \Atm.
 
 \hfill
 
-The rest of the Figure \ref{abstract-syntax} is fairly self-explanatory, so we will not go into further detail here.
+The rest of Figure \ref{abstract-syntax} is fairly self-explanatory, so we will not go into further detail here.
 
 \subsection{De Bruijn Notation}
 
@@ -183,7 +187,7 @@ One method of doing so is to use De Bruijn indices\textemdash variables are inst
   \label{debruijn}
 \end{figure}
 
-However, this solution is not perfect\textemdash multi-variable functions would require currying in order to properly be De Bruijnized. Unfortunately, currying functions would make it difficult to perform similarity checks on function applications. In a later section, we will discuss the methodology for comparing two separate functional applications, but in short, we will need to collect all function arguments to properly compare. If functions are curried, then collecting the function arguments will require traversing down the AST and determining which expressions belong to the function application, which is messier than would be preferred (shown in Figure \ref{curried-ast}).
+However, this solution is not perfect\textemdash multi-variable functions would require currying in order to be properly De Bruijnized. Unfortunately, currying functions would make it difficult to perform similarity checks on function applications. In a later section, we will discuss the methodology for comparing two separate functional applications, but in short, we will need to collect all function arguments to properly compare. If functions are curried, then collecting the function arguments requires traversing down the AST and determining which expressions belong to the function application\textemdash a messier process than would be preferred (shown in Figure \ref{curried-ast}).
 
 \hfill
 
@@ -251,7 +255,7 @@ Fortunately, the Racket programming language does make parsing \R{} rather simpl
 
 \hfill
 
-To facilitate in the process of converting the concrete syntax of the \R{} language into an AST, we can take advantage of Racket \key{structs}, lending to a somewhat OOP-style implementation (See Table \ref{ast-structs}). As each expression is parsed, we generate the corresponding \key{struct}, and recurse on its components.
+To facilitate the process of converting the concrete syntax of the \R{} language into an AST, we can take advantage of Racket \key{structs}, lending to a somewhat OOP-style implementation (See Table \ref{ast-structs}). As each expression is parsed, we generate the corresponding \key{struct} and recurse on its components.
 
 \begin{table}[H]
   \begin{mdframed}
@@ -284,7 +288,7 @@ To facilitate in the process of converting the concrete syntax of the \R{} langu
   \label{ast-structs}
 \end{table}
 
-After repeatedly calling the \key{read} function on the input file and parsing it, we are left with a list of various expression/definition AST nodes. With a quick partition of the list, we can then construct the \key{Program} struct with the disjoint list of definitions and expressions.
+After repeatedly calling the \key{read} function on the input file and parsing it, we are left with a list of various expression/definition AST nodes. With a quick partition of the list, we can then construct the \key{Program} structure with the disjoint list of definitions and expressions.
 
 \subsubsection{De Bruijn Conversion}
 Once we have finished the conversion from concrete syntax to an AST, converting to De Bruijn notation is quite simple, especially since we are not evaluating the program's behavior, only changing the syntax form.
@@ -301,9 +305,9 @@ If the variable does not exist in the environment, we assume that the variable i
 
 There was some consideration made toward the neccessity of standardizing function names as well, perhaps relabeling functions in the form \key{f\#}, so that there could be a differentiation made between functions and variables. However, it was ultimately decided that doing so would not have a large effect on the similarity algorithm.
 
-\section{The Similarity Program}
+\usection{The Similarity Program}
 
-Up until this point, the program has been implemented in the Racket programming language. The algorithm is best implemented in an object oriented programming language, so at this point, we make a transition from Racket to Python.
+Up until this point, the program has been implemented in the Racket programming language. The algorithm is best implemented in an object-oriented language, so at this point, we make a transition from Racket to Python.
 
 \subsection{Comparing AST Expressions}
 
@@ -315,59 +319,71 @@ For \Atm{} nodes, if two atomic nodes are of the same structure, that adds 1 poi
 
 \hfill
 
-Comparing two expression nodes of the same structure is a bit more involved as the subcomponents will need to be recursed on. Before discussing the comparison methods for expression nodes, we need to explain what is called the \textbf{similarity cap}. The similarity cap is a value used to determine the relative similarity of two programs\textemdash otherwise, larger programs will naturally have a higher similarity score as they will have more AST nodes to process. To calculate the similarity cap of a program, count the number of AST nodes in the tree, counting \Atm{} structures twice as they can have a max similarity score of 2.
+As with \Atm{} nodes, two \Exp{} nodes of the same structure will have 1 point of similarity. However, fully comparing two expression nodes will be a bit more involved as the subcomponents will need to be recursed on. Before discussing the comparison methods for expression nodes, we need to explain what is called the \textbf{similarity cap}. The similarity cap is a value used to determine the relative similarity of two programs\textemdash otherwise, larger programs will naturally have a higher similarity score as they will have more AST nodes to process. To calculate the similarity cap of a program, count the number of AST nodes in the tree, counting \Atm{} structures twice as they can have a max similarity score of 2.
 
 \hfill
 
 \begin{itemize}
   \item\key{If}
     \begin{adjustwidth}{5mm}{}
-      Compare the two condition expressions and take the similarity score as the first score.
+      \begin{enumerate}
+        \item Compare the two condition expressions and take the similarity score as the first score.
 
-      To compare the consequents and alternatives, calculate the combined similarity score of comparing consequent to consequent and alternative to alternative. Then calculate the combined similarity score of comparing consequents to alternatives. Choose the larger of the two scores as the second similarity score.
+        \item To compare the consequents and alternatives, calculate the combined similarity score of comparing consequent-to-consequent and alternative-to-alternative. Then calculate the combined similarity score of comparing consequents to alternatives. Choose the larger of the two scores as the second similarity score.
 
-      The sum of the two similarity scores will be the similarity score of the two \key{If} structures.
+        \item The sum of the two similarity scores will be the similarity score of the two \key{If} structures.
+  \end{enumerate}
     \end{adjustwidth}
 
   \item\key{Let}
     \begin{adjustwidth}{5mm}{}
-      The sum of the similarity scores from comparing the value expressions and comparing the body expressions will be the similarity score.
+      \begin{enumerate}
+\item     The sum of the similarity scores from comparing the value expressions and comparing the body expressions will be the similarity score.
 
-      As all variables have De Bruijnized, there is no need to consider the new variable created in the \key{Let}.
+\item     As all variables have been De Bruijnized, there is no need to consider the new variable created in the \key{Let}.
+  \end{enumerate}
     \end{adjustwidth}
 
   \item\key{Apply}
     \begin{adjustwidth}{5mm}{}
-      Calculate the similarity score from comparing the applied functions.
+      \begin{enumerate}
+\item     Calculate the similarity score from comparing the applied functions.
 
-      To calculate the similarity score of the arguments, we will want to pair up each argument with the most similar argument from the other structure. Call the list of arguments from the first \key{Apply} structure \key{args1} and the second list of arguments from the other structure \key{args2}.
+\item     To calculate the similarity score of the arguments, we will want to pair up each argument with the most similar argument from the other structure. Call the list of arguments from the first \key{Apply} structure \key{args1} and the second list of arguments from the other structure \key{args2}.
 
-      Take the first argument from \key{args1}. Compare it to each argument from \key{args2} and pick the argument that has the highest similarity score. Remove that argument from \key{args2}.
+\item     Take the first argument from \key{args1}. Compare it to each argument from \key{args2} and pick the argument that has the highest similarity score. Remove that argument from \key{args2}.
 
-      Take the next argument from \key{args1} and repeat the previous step again.
+\item     Take the next argument from \key{args1} and repeat the previous step again.
 
-      Do so until all pairings have been made. Sum up the similarity scores from the resulting pairs and the similarity score of the applied functions to achieve a tentative similarity score.
+\item     Do so until all pairings have been made. Sum up the similarity scores from the resulting pairs and the similarity score of the applied functions to achieve a tentative similarity score.
 
-      If there are excess unpaired arguments, sum up the similarity caps of the excess arguments and subtract that from the tentative score above (with a minimum total score value of 0). The resulting value is the similarity score of the \key{Apply} structures.
+\item     If there are excess unpaired arguments, sum up the similarity caps of the excess arguments and subtract that from the tentative score above (with a minimum total score value of 0). The resulting value is the similarity score of the \key{Apply} structures.
+  \end{enumerate}
     \end{adjustwidth}
 
   \item\key{Lambda}
     \begin{adjustwidth}{5mm}{}
-      Calculate the similarity score of the bodies of the lambda expressions and subtract from that the difference in function arity to determine the overall similarity score.
+      \begin{enumerate}
+        \item Calculate the similarity score of the bodies of the lambda expressions and subtract from that the difference in function arity to determine the overall similarity score.
+  \end{enumerate}
     \end{adjustwidth}
 
   \item\key{Def}
     \begin{adjustwidth}{5mm}{}
-      This is the same as \key{Lambda}\textemdash calculate the similarity score of the bodies of the definitions and subtract from that the difference in function arity.
+      \begin{enumerate}
+\item     This is the same as \key{Lambda}\textemdash calculate the similarity score of the bodies of the definitions and subtract from that the difference in function arity.
+  \end{enumerate}
     \end{adjustwidth}
 
   \item\key{Program}
     \begin{adjustwidth}{5mm}{}
-      First, pair up function definitions in the same way as described for arguments in \key{Apply}. Sum up the similarity scores from the resulting pairs.
+      \begin{enumerate}
+\item     First, pair up function definitions in the same way as described for arguments in \key{Apply}. Sum up the similarity scores from the resulting pairs.
 
-      Do the same for the list of expressions in both \key{Program} structures. Sum up the similarity scores from the resulting pairs.
+\item     Do the same for the list of expressions in both \key{Program} structures. Sum up the similarity scores from the resulting pairs.
 
-      Sum up both similarities scores from the definitions and expressions to calculate the similarity score of the two \key{Program}s.
+\item     Sum up both similarities scores from the definitions and expressions to calculate the similarity score of the two \key{Program}s.
+  \end{enumerate}
     \end{adjustwidth}
   \end{itemize}
 
@@ -389,7 +405,7 @@ In addition to the \key{struct} fields introduced in Table \ref{ast-structs}, we
 
 \hfill
 
-While the \key{Atom} and \key{Exp} abstract classes are largely unneeded, they were included for the sake of scalability in the future. It is possible that such abstract classes would be needed, so they were included in the design process. The implementations of the \key{compare} methods are fairly straightforward and follow the algorithms described in the previous section.
+While the \key{Atom} and \key{Exp} abstract classes are largely unneeded, they were included for the sake of scalability in the future. The implementations of the \key{compare} methods are fairly straightforward and follow the algorithms described in the previous section.
 
 \subsubsection{Converting Racket AST to Python AST}
 
@@ -401,13 +417,13 @@ From there, we can pipe the constructed strings through \key{stdout} and into a 
 
 \subsubsection{Terminal Interface and Behavior}
 
-To interact with the similarity program, we need some sort of terminal interface that we can work with to process files for similarity. The purpose of the Code Similarity Detection Tool is to detect how similar a provided smart contract is to pre-existing popular and mature contracts. As such, it follows that we maintain a database of the aforementioned pre-existing contract. In this project, those files would be stored in the \key{archetypes/} directory.
+To interact with the similarity program, we need some sort of terminal interface that we can work with to process files for similarity. The purpose of the Code Similarity Detection Tool is to detect how similar a provided smart contract is to pre-existing popular and mature contracts. As such, it follows that we maintain a database of the aforementioned pre-existing contracts. In this project, those files would be stored in the \key{archetypes/} directory.
 
 \hfill
 
-The program needs to first read all of the \key{archetypes/} files and create individual ASTs for each file. Then terminal program should ask for a single file to run the Code Similarity Detection Tool on and generate the AST to check from the provided file. Then simply run the comparison function between that AST and all ASTs generated from the \key{archetypes/} directory and output the pairing with the highest relative similarity.
+The program needs to first read all of the \key{archetypes/} files and create individual ASTs for each file. Then it should ask for a single file to run the Code Similarity Detection Tool on and generate the AST from the provided file. Then simply run the comparison function between that AST and all ASTs generated from the \key{archetypes/} directory and output the pairing with the highest relative similarity.
 
-\section{Weaknesses and Improvements}
+\usection{Weaknesses and Improvements}
 
 \subsection{Hiding Similarities in Differing Structures}
 Unfortunately, this design is not without flaws. The code similarity algorithm simply returns 0 if two AST nodes are not of the same structure. This means the following example would return 0 as a code similarity score, despite being fairly similar:
@@ -440,20 +456,20 @@ It is certainly possible to ameliorate this issue\textemdash perhaps discarding 
 
 \subsection{Syntactical vs Semantical Analysis}
 
-As mentioned in the beginning of this document, this tool evaluates syntactical similarities. In other words, it is unable to determine if two programs behave similarly, only if they look similar. The following two programs would score highly syntactically, despite being different semantically:
+As mentioned in the beginning of this document, this tool evaluates syntactical similarities. In other words, while it can check structural similarity, it is unable to determine if two programs behave similarly. The following two programs would score highly syntactically, despite being different semantically:
 
 \begin{figure}[H]
   \begin{mdframed}
     \begin{lstlisting}[escapechar=\%]
 (define (fib n)
-  (if (and (eq? 1) (eq? 0))
+  (if (<= n 1)
     1
     (+ (fib (- n 1)) (fib (- n 2)))))
 
 ; vs
 
 (define (fact n)
-  (if (and (eq? 1) (eq? 0))
+  (if (<= n 1)
     1
     (* n (fact (- n 1)))))
     \end{lstlisting}
@@ -462,5 +478,13 @@ As mentioned in the beginning of this document, this tool evaluates syntactical 
   \label{syntax-vs-sematics}
 \end{figure}
 
-Syntactical analysis, unsurprisingly, is a much simpler task than semantical analysis. Take for example, a case where two programs apply the same 2+-ary function, but with the arguments in different orders. Determining similarity in syntax would be simple, but determining behavioral similarity would require discerning whether the function is deterministic, commutative, etc. Furthermore, according to Rice's Theorem, fully determining behavioral equivalence of two programs is undecidable.
+Syntactical analysis, unsurprisingly, is a much simpler task than semantical analysis. Take for example, a case where two programs apply the same function, but with the arguments in different orders. Determining similarity in syntax would be simple, but determining behavioral similarity would require discerning whether the function is deterministic, commutative, etc. Furthermore, according to Rice's Theorem, fully determining behavioral equivalence of two programs is undecidable.
+
+\subsection{Similarity Algorithm Improvements}
+
+The similarity algorithm described previously is rather rudimentary\textemdash with a couple of tweaks and changes in weights, it could possibly be improved further. For example, when evaluating the similarity of two function applications, we could take the similarity of the applied functions and create a coefficient that is used in determining the impact of argument similarity. By doing so, we can change how the function being applied affects the similarity of the entire function application. 
+
+\hfill
+
+There are likely many other ways of improving on the similarity algorithm. It may even be necessary to change how the AST is constructed and how functions are treated in the De Bruijn conversion. With more experimenting, we may achieve a more accurate code similarity algorithm while preserving the core concepts outlined in this project.
 \end{document}

@@ -1,5 +1,5 @@
 (define (fib n)
-  (if (and (eq? 1) (eq? 0))
+  (if (<= n 1)
     1
     (+ (fib (- n 1)) (fib (- n 2)))))
 

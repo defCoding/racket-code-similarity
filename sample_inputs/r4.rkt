@@ -1,5 +1,5 @@
 (define (fact n)
-  (if (and (eq? 1) (eq? 0))
+  (if (<= n 1)
     1
     (* n (fact (- n 1)))))
 
