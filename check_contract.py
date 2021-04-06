@@ -1,5 +1,5 @@
 from lib.ast import *
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, call
 from os import path, listdir
 import sys
 
@@ -13,6 +13,11 @@ if __name__ == '__main__':
     # Check if file exists.
     if not path.exists(sys.argv[1]):
         raise FileNotFoundError(f'No such file: {sys.argv[1]}')
+
+    # Compile Racket code if it does not exist.
+    if not path.exists('utils/parser/parser'):
+        print('Compiling Racket parser...')
+        call(['raco', 'exe', 'utils/parser/parser.rkt'], stdout=PIPE)
 
 
     # Collect all archetypal source code (e.g. pre-existing validated and mature smart contracts). Map filename to source code.
