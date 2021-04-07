@@ -5,7 +5,7 @@
 \usepackage{mdframed}
 \usepackage{amsmath}
 \usepackage{float}
-\usepackage{listings}
+\usepackage{minted}
 \usepackage{changepage}
 \usepackage[final]{pdfpages}
 \usepackage{hyperref}
@@ -18,6 +18,7 @@
 }
 \usepackage[format=plain,
             font=it]{caption}
+\DeclareUnicodeCharacter{3BB}{$\lambda$}
             
 \usepackage{graphicx}
 \graphicspath{ {.} }
@@ -169,19 +170,19 @@ One method of doing so is to use De Bruijn indices\textemdash variables are inst
 
 \begin{figure}[H]
   \begin{mdframed}
-    \begin{lstlisting}[escapechar=\%]
+    \begin{minted}{newlisp}
 ; Original Syntax
-(%\lamb% (x)
-  (%\lamb% (y)
-    (%\lamb% (z)
+(λ (x)
+  (λ (y)
+    (λ (z)
       (+ x (+ y z)))))
 
 ; De Bruijnized Syntax
-(%\lamb%
-  (%\lamb% 
-    (%\lamb% 
+(λ
+  (λ 
+    (λ 
       (+ v2 (+ v1 v0)))))
-    \end{lstlisting}
+    \end{minted}
   \end{mdframed}
   \caption{Demonstrating conversion to De Bruijn indices.}
   \label{debruijn}
@@ -193,15 +194,15 @@ However, this solution is not perfect\textemdash multi-variable functions would 
 
 \begin{figure}[H]
   \begin{mdframed}
-    \begin{lstlisting}[escapechar=\%]
+    \begin{minted}{newlisp}
 ; Original Syntax
 (define (func x y z)
   (+ x (+ y z)))
 
 ; Curried Syntax
 (define (func x)
-  (%\lamb% (y)
-    (%\lamb% (z)
+  (λ (y)
+    (λ (z)
       (+ x (+ y z)))))
 
 ; Curried Function Application 1
@@ -225,7 +226,7 @@ However, this solution is not perfect\textemdash multi-variable functions would 
       (Var func) (Int 6))
     (Apply (Op +) (Int 4) (Int 1)))
   (Apply (Op +) (Int 2) (Int 3)))
-    \end{lstlisting}
+    \end{minted}
   \end{mdframed}
   \caption{The AST representation of two similar applications of \key{func} hide away the arguments of \key{func}, making it difficult to parse out the arguments for comparison.}
   \label{curried-ast}
@@ -235,7 +236,7 @@ It would be best to keep functions as is so that all of the arguments are kept w
 
 \begin{figure}[H]
   \begin{mdframed}
-    \begin{lstlisting}[escapechar=\%]
+    \begin{minted}{newlisp}
 ; Original Syntax
 (define (func x y z)
   (+ x (+ y z)))
@@ -243,7 +244,7 @@ It would be best to keep functions as is so that all of the arguments are kept w
 ; De Bruijn Variation Notation
 (define (func)
   (+ v2 v1 v0))
-    \end{lstlisting}
+    \end{minted}
   \end{mdframed}
   \caption{Example of De Bruijn Variation Notation}
   \label{debruijn-variation}
@@ -430,7 +431,7 @@ Unfortunately, this design is not without flaws. The code similarity algorithm s
 
 \begin{figure}[H]
   \begin{mdframed}
-    \begin{lstlisting}[escapechar=\%]
+    \begin{minted}{newlisp}
 (let ([x 5])
   (+
     (if (< x 10)
@@ -446,7 +447,7 @@ Unfortunately, this design is not without flaws. The code similarity algorithm s
         12
         x))
    5)
-    \end{lstlisting}
+    \end{minted}
   \end{mdframed}
   \caption{An edge-case example that shows the weakness of the algorithm.}
   \label{weak-example}
@@ -460,7 +461,7 @@ As mentioned in the beginning of this document, this tool evaluates syntactical 
 
 \begin{figure}[H]
   \begin{mdframed}
-    \begin{lstlisting}[escapechar=\%]
+    \begin{minted}{newlisp}
 (define (fib n)
   (if (<= n 1)
     1
@@ -472,7 +473,7 @@ As mentioned in the beginning of this document, this tool evaluates syntactical 
   (if (<= n 1)
     1
     (* n (fact (- n 1)))))
-    \end{lstlisting}
+    \end{minted}
   \end{mdframed}
   \caption{Syntactical vs Semantical Analysis}
   \label{syntax-vs-sematics}
